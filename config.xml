@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<widget
+    id="com.AEHTDD.HTDD"
+    version="1.0.0"
+    xmlns="http://www.w3.org/ns/widgets"
+    xmlns:cdv="http://cordova.apache.org/ns/1.0">
+
+    <name>TOOL-789</name>
+    <description>Tool TX</description>
+    <author email="chucongchumaymannhe@gmail.com" href="http://htdd.site/">AEHTDD</author>
+
+    <content src="index.html" />
+    <access origin="*" />
+    
+    <!-- iOS-specific preferences -->
+    <preference name="orientation" value="portrait" />
+    <preference name="fullscreen" value="true" />
+    <preference name="ios-statusbarstyle" value="default" />
+    <preference name="BackupWebStorage" value="none" />
+
+    <!-- iOS icons/splash (optional but recommended) -->
+    <icon src="res/ios/789-logo.png" />
+    <splash src="res/ios/789-logo.png" />
+
+    <platform name="ios">
+        <icon src="res/ios/789-logo.png" />
+        <splash src="res/ios/789-logo.png" />
+    </platform>
+</widget>
