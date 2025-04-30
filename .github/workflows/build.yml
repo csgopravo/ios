@@ -1,4 +1,4 @@
-name: Build iOS App (No Code Signing)
+name: Build iOS App
 
 on:
   push:
@@ -24,16 +24,21 @@ jobs:
     - name: Install dependencies
       run: npm install -g cordova # Install Cordova globally
 
-    - name: Add iOS platform
+    - name: Add iOS platform and update cordova-ios
       run: |
         cordova platform add ios
+        cordova platform update ios # Ensure latest cordova-ios
+
+    - name: Install Cordova plugins
+      run: |
         cordova plugin add cordova-plugin-file # Add other plugins
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-ionic-webview
+        cordova plugin add cordova-plugin-inappbrowser # Example plugin
 
     - name: Build iOS app
       run: |
-        cordova build ios --debug # Build in debug mode (no signing required)
+        cordova build ios --debug --buildConfig build.json # Use build.json
     
     - name: Upload IPA
       uses: actions/upload-artifact@v4
