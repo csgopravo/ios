@@ -1,105 +1,50 @@
-name: Build IPA cho iOS
+name: Build iOS App
 
 on:
   push:
     branches:
-      - main # hoặc tên nhánh chính của bạn
+      - main # or your main branch name
   pull_request:
     branches:
       - main
 
 jobs:
   build:
-    runs-on: macos-latest # Yêu cầu máy ảo macOS để build iOS
+    runs-on: macos-latest # Requires a macOS runner to build iOS
 
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # Quan trọng để versioning chính xác
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-    - name: Thiết lập Node.js
+    - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x  # Hoặc phiên bản Node.js ưa thích của bạn
+        node-version: '18.x' # Or your preferred Node.js version
 
-    - name: Cài đặt dependencies
-      run: npm install -g cordova-cli && npm install # hoặc yarn install
+    - name: Install dependencies
+      run: npm install -g cordova # Install Cordova globally
 
-    - name: Chuẩn bị build iOS
+    - name: Add iOS platform
       run: |
         cordova platform add ios
-        cordova prepare ios
+        cordova plugin add cordova-plugin-file # Add other plugins
+        cordova plugin add cordova-plugin-splashscreen
+        cordova plugin add cordova-plugin-ionic-webview
 
-    - name: Build ứng dụng iOS
-      env:
-        BUILD_CONFIG: ${{ secrets.BUILD_CONFIG }} # Bạn cần thiết lập secret này trong cài đặt repo
+    - name: Set up code signing
+      uses: apple-actions/import-codesign-certs@v1
+      with:
+        certificate-content: ${{ secrets.IOS_CERTIFICATE }} # Base64 encoded .p12
+        certificate-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        provisioning-profile-content: ${{ secrets.IOS_PROVISIONING_PROFILE }} # Base64 encoded mobileprovision
+        keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }} # Keychain password (can be same as certificate password)
+
+    - name: Build iOS app
       run: |
-        echo "$BUILD_CONFIG" > build.json  # Tạo file build.json
-        cordova build ios --device --buildConfig=build.json
-        
-    - name: Tạo Archive và Xuất IPA
-      run: |
-        # Tìm đường dẫn workspace Xcode (thay đổi nếu cần)
-        WORKSPACE_PATH=$(find platforms/ios/*.xcworkspace)
-        
-        # Lấy tên scheme từ workspace (bỏ đuôi .xcworkspace)
-        SCHEME_NAME=$(basename "$WORKSPACE_PATH" .xcworkspace)
-
-        # Build archive
-        xcodebuild archive \
-          -workspace "$WORKSPACE_PATH" \
-          -scheme "$SCHEME_NAME" \
-          -configuration Debug  \
-          -archivePath "build/TOOL-789.xcarchive" \
-          CODE_SIGN_IDENTITY="Apple Development: [Tên của bạn] (XXXX)" \
-          PROVISIONING_PROFILE_SPECIFIER="[Tên Profile của bạn]" \
-          
-        # Xuất IPA
-        xcodebuild -exportArchive \
-          -archivePath "build/TOOL-789.xcarchive" \
-          -exportPath "build" \
-          -exportOptionsPlist exportOptions.plist  # Bạn cần tạo file này (xem bên dưới)
-
+        cordova build ios --release
+    
     - name: Upload IPA
-      uses: actions/upload-artifact@v4  # ĐÃ CẬP NHẬT LÊN v4
+      uses: actions/upload-artifact@v3
       with:
         name: ios-app
-        path: build/*.ipa
-
-    - name: Thiết lập danh tính git
-      run: |
-        git config --global user.email "email-bot-cua-ban@example.com"
-        git config --global user.name "Tên Bot Của Bạn"
-
-    - name: Commit thay đổi phiên bản (nếu có)
-      id: version-bump
-      uses: phips28/gh-action-version-bump@master
-      with:
-        minor-wording: '\[\*\*\*\]' # Thay đổi nếu định dạng commit message khác
-        major-wording: 'BREAKING CHANGE'
-        patch-wording: 'fix:'
-        default-bump: 'patch'
-    
-    - name: Đẩy thay đổi
-      if: steps.version-bump.outputs.version
-      run: |
-        git push origin main
-
-
-#  --- exportOptions.plist (Tạo file này ở thư mục gốc của repo) ---
-#  <?xml version="1.0" encoding="UTF-8"?>
-#  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-#  <plist version="1.0">
-#  <dict>
-#  	<key>method</key>
-#  	<string>development</string>  #  	<key>provisioningProfiles</key>
-#  	<dict>
-#  		<key>com.AEHTDD.HTDD</key>  #  		<string>Tên Profile Của Bạn</string>  #  	</dict>
-#  	<key>signingCertificate</key>
-#  	<string>Apple Development: [Tên của bạn] (XXXX)</string>  #  	<key>signingStyle</key>
-#  	<string>manual</string>
-#  	<key>stripSwiftSymbols</key>
-#  	<true/>
-#  	<key>teamID</key>
-#  	<string>YOUR_TEAM_ID</string>  #  </dict>
-#  </plist>
+        path: platforms/ios/build/device/*.ipa
