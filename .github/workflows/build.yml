@@ -61,7 +61,7 @@ jobs:
           -exportOptionsPlist exportOptions.plist  # Bạn cần tạo file này (xem bên dưới)
 
     - name: Upload IPA
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # ĐÃ CẬP NHẬT LÊN v4
       with:
         name: ios-app
         path: build/*.ipa
